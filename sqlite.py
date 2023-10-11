@@ -27,25 +27,26 @@ class Database:
         cr = self.conn.execute(f"SELECT COUNT(*) FROM {tableName}")
         for row in cr:
             return row[0]
+        raise Exception
 
     def selectOne(self, tableName:str, columnName:str, rid:int) -> str:
         cr = self.conn.execute(f"SELECT {columnName} FROM {tableName} WHERE {RowC} = {rid}")
         for row in cr:
             return row[0]
         cr.close()
+        raise Exception
     
-    def selectColumnRange(self, tableName:str, columnName:str, startRid:int = 0, endRid:int = None) -> List[str]:
+    def selectColumn(self, tableName:str, columnName:str, startRid:int = 0, endRid:int = 2147483647) -> List[str]:
         cr = self.conn.execute(f"SELECT {columnName} FROM {tableName} WHERE {RowC} >= {startRid} AND {RowC} < {endRid}")
         r = [row[0] for row in cr]
         cr.close()
         return r
 
-    def select(self, tableName:str, columnNames:List[str], startRid:int = 0, endRid:int = None) -> List[List[str]]:
+    def select(self, tableName:str, columnNames:List[str], startRid:int = 0, endRid:int = 2147483647) -> List[List[str]]:
         cr = self.conn.execute(f"SELECT {' ,'.join(columnNames)} FROM {tableName} WHERE {RowC} >= {startRid} AND {RowC} < {endRid}")
-        r = [[] for _ in range(len(columnNames))]
+        r = []
         for row in cr:
-            for cid in range(len(columnNames)):
-                r[cid].append(row[cid])
+            r.append(list(row))
         cr.close()
         return r
     
@@ -74,8 +75,8 @@ if __name__ == '__main__':
     print(DB.selectOne("stu", "age", 1))
     print(DB.selectOne("stu", "age", 2))
 
-    print(DB.selectColumnRange("stu", "age", 0, 10))
-    print(DB.selectColumnRange("stu", "name", 0, 2))
+    print(DB.selectColumn("stu", "age", 0, 10))
+    print(DB.selectColumn("stu", "name", 0, 2))
 
     print(DB.columnNames("stu"))
 
