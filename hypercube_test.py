@@ -225,6 +225,26 @@ class test_doFullHypercubeCrossTable:
         # assert hc[CubeKey.of(*'20|15'.split('|'))].RowsetArray == [[1, 3, 4], [0, 2, 5]]
         # assert hc[CubeKey.of(*'15|20'.split('|'))].RowsetArray == [[0, 2, 5], [1, 3, 4]]
         assert hc[CubeKey.of(*'20|20'.split('|'))].RowsetArray == [[1, 3, 4], [1, 3, 4]]
+    def test05(self): # t0.a = t2.b ^ t2.c = t4.d
+        DB = Database()
+        DB.createTable("a", [('a', [1, 1, 2])])
+        DB.createTable("bc", [('b', [1, 1, 3]), ('c', [2, 2, 2])])
+        DB.createTable("d", [('d', [2, 2, 2])])
+        DB.conn.execute("CREATE VIEW j AS SELECT * FROM a t0, bc t2, d t4 WHERE t0.a = t2.b AND t2.c = t4.d;")
+        info = CubeInfo()
+        info.setTables("a", "bc", "d")
+        info.setColumns(0, "a")
+        info.setColumns(1, "b", "c")
+        info.setColumns(2, "d")
+        info.addJoin(Join(0, ['a'], 1, ['b'], predicate=lambda v:int(v[0])==int(v[1]), info="a=b", cubeInfo=info, isInnerJoin=True))
+        info.addJoin(Join(1, ['c'], 2, ['d'], predicate=lambda v:int(v[0])==int(v[1]), info="c=d", cubeInfo=info, isInnerJoin=True))
+        print(info)
+        hc = doFullHypercube(info, DB)
+        print(hc)
+        print("row-size", utils.rowSize(hc), DB.tableLength('j'))
+        assert len(hc) == 1
+        assert utils.rowSize(hc) == DB.tableLength('j')
+        assert hc[CubeKey.of(*'1|1|2|2'.split('|'))].RowsetArray == [[0, 1], [0, 1], [0, 1, 2]]
 
 class utils:
     @staticmethod
